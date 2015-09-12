@@ -30,17 +30,16 @@ public class ServiceImpl {
 			e1.printStackTrace();
 		}
 
-		String insertTableSQL = "INSERT INTO EVENTS"
-				+ "(CanmeraNo, Location, CREATED_DATE) VALUES" + "(?,?,?)";
+		String insertTableSQL = "INSERT INTO Events (CameraNo, Location,created_time) VALUES(?,?,?)";
 
 		PreparedStatement preparedStatement = null;
 		try {
 			dbConnection = getConnection();
 			preparedStatement = dbConnection.prepareStatement(insertTableSQL);
 
-			preparedStatement.setString(0, cameraNo);
-			preparedStatement.setString(1, location);
-			preparedStatement.setTimestamp(2, getCurrentTimeStamp());
+			preparedStatement.setString(1, cameraNo);
+			preparedStatement.setString(2, location);
+			preparedStatement.setTimestamp(3, getCurrentTimeStamp());
 
 			// execute insert SQL stetement
 			preparedStatement.executeUpdate();
@@ -65,7 +64,8 @@ public class ServiceImpl {
 
 	}
 
-	private void sendMessage(List<String> localDurgas) throws TwilioRestException {
+	private void sendMessage(List<String> localDurgas)
+			throws TwilioRestException {
 		TwilioTest test = new TwilioTest();
 		for (String phone : localDurgas) {
 			test.sendMessage(phone);
@@ -76,20 +76,19 @@ public class ServiceImpl {
 
 		List<String> localDurgasNumbers = new ArrayList<String>();
 
-		String localDurgas = "SELECT PHONENUMBER FROM VOLUNTEERS"
-				+ "WHERE Enable=true AND LOCATION Like %?%";
+		String localDurgas = "SELECT PHONENUMBER FROM volunteers WHERE enable_durga=true AND LOCATION = ?";
 
 		PreparedStatement preparedStatement = null;
 		try {
 			dbConnection = getConnection();
 			preparedStatement = dbConnection.prepareStatement(localDurgas);
-			preparedStatement.setString(0, location);
+			preparedStatement.setString(1, location);
 
 			// execute insert SQL statement
 			ResultSet rs = preparedStatement.executeQuery();
 
 			while (rs.next()) {
-				localDurgasNumbers.add(rs.getString(0));
+				localDurgasNumbers.add(rs.getString("PHONENUMBER"));
 			}
 		} catch (SQLException e) {
 
@@ -110,8 +109,8 @@ public class ServiceImpl {
 	}
 
 	private static String getLocation(String cameraNo) throws SQLException {
-		String selectLocationOfCamera = "SELECT LOCATION FROM CAMERA_DETAILS"
-				+ "WHERE CAMERANO=?";
+		String selectLocationOfCamera = "SELECT location FROM camera_details "
+				+ "WHERE CAMERA_ID = ?";
 
 		PreparedStatement preparedStatement = null;
 		String location = null;
@@ -119,12 +118,12 @@ public class ServiceImpl {
 			dbConnection = getConnection();
 			preparedStatement = dbConnection
 					.prepareStatement(selectLocationOfCamera);
-			preparedStatement.setString(0, cameraNo);
+			preparedStatement.setString(1, cameraNo);
 
-			// execute insert SQL stetement
+			// execute select SQL stetement
 			ResultSet rs = preparedStatement.executeQuery();
-
-			location = rs.getString(0);
+			rs.next();
+			location = rs.getString("location");
 			System.out.println("Location of camera found " + location);
 
 		} catch (SQLException e) {
