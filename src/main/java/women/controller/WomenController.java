@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import women.model.Durga;
+import women.model.Location;
 import women.service.WomenService;
 
 @RestController
@@ -19,10 +20,11 @@ public class WomenController {
 	private WomenService womenService;
 
 	@RequestMapping("/warning")
-	public void getWarning(@RequestParam("lat") String lat,
+	public ResponseEntity<Location> getWarning(@RequestParam("lat") String lat,
 			@RequestParam("lng") String lng) {
 
-		womenService.sendWarning(lat, lng);
+		return new ResponseEntity<Location>(womenService.sendWarning(lat, lng),
+				HttpStatus.OK);
 	}
 
 	@RequestMapping(value = "/registerDurga", method = RequestMethod.POST)

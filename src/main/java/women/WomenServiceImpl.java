@@ -8,9 +8,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import women.model.Durga;
+import women.model.Location;
 import women.service.WomenService;
 
 @Component
@@ -18,9 +20,16 @@ public class WomenServiceImpl implements WomenService {
 
 	private static Connection dbConnection;
 
-	private void sendMails(List<String> localDurgas) {
+	// @Value("${mysql.username}")
+	private static String username = "root";
+
+	// @Value("${mysql.password}")
+	private static String password = System.getProperty("MYSQL_PASSWORD");
+
+	private void sendMails(List<String> localDurgas, String lat, String lng) {
+		SendMailTLS sendMail = new SendMailTLS();
 		for (String emailId : localDurgas) {
-			SendMailTLS.sendEmail(emailId);
+			sendMail.sendEmail(emailId, lat, lng);
 		}
 	}
 
@@ -40,10 +49,10 @@ public class WomenServiceImpl implements WomenService {
 		Connection connection = null;
 
 		try {
-			//TODO provide username /password
+			// TODO provide username /password
 			connection = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/womensafety", "",
-					"");
+					"jdbc:mysql://localhost:3306/womensafety", username,
+					password);
 			return connection;
 
 		} catch (SQLException e) {
@@ -54,29 +63,44 @@ public class WomenServiceImpl implements WomenService {
 		return connection;
 	}
 
-	public void sendWarning(String lat, String lng) {
+	public Location sendWarning(String lat, String lng) {
 		List<String> localDurgas = findEmailIdOfLocalDuragas(lat, lng);
-		sendMails(localDurgas);
+		sendMails(localDurgas, lat, lng);
+		return new Location(lat, lng);
 
 	}
 
 	private List<String> findEmailIdOfLocalDuragas(String lat, String lng) {
 		List<String> localDurgasNumbers = new ArrayList<String>();
 
-		String localDurgas = "SELECT EMAILID FROM durgas WHERE enable_durga=true AND lat = ? AND lng = ?";
+		Double minLat = Double.parseDouble(lat) - 10;
+		Double maxLat = Double.parseDouble(lat) + 10;
+		Double minLng = Double.parseDouble(lng) - 10;
+		Double maxLng = Double.parseDouble(lng) + 10;
+		if (minLat <= 0)
+			minLat = 0.0;
+		if (maxLat <= 0)
+			maxLat = 0.0;
+		if (minLng <= 0)
+			minLng = 0.0;
+		if (maxLng <= 0)
+			maxLng = 0.0;
+		String localDurgas = "SELECT EMAILID FROM durgas WHERE enable_durga=true AND latitude between ? AND ? AND longitude between ? AND ?";
 
 		PreparedStatement preparedStatement = null;
 		try {
 			dbConnection = getConnection();
 			preparedStatement = dbConnection.prepareStatement(localDurgas);
-			preparedStatement.setString(1, lat);
-			preparedStatement.setString(2, lng);
+			preparedStatement.setString(1, minLat.toString());
+			preparedStatement.setString(2, maxLat.toString());
+			preparedStatement.setString(3, minLng.toString());
+			preparedStatement.setString(4, maxLng.toString());
 
 			// execute insert SQL statement
 			ResultSet rs = preparedStatement.executeQuery();
 
 			while (rs.next()) {
-				localDurgasNumbers.add(rs.getString("PHONENUMBER"));
+				localDurgasNumbers.add(rs.getString("EMAILID"));
 			}
 		} catch (SQLException e) {
 
