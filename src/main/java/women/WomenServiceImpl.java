@@ -29,6 +29,8 @@ public class WomenServiceImpl implements WomenService {
 
 	public Location sendWarning(String lat, String lng) {
 		List<String> localDurgas = findEmailIdOfLocalDuragas(lat, lng);
+		String event = "INSERT into event(lat,lng) values(?,?)";
+		dao.save(event, lat,lng);
 		sendMails(localDurgas, lat, lng);
 		return new Location(lat, lng);
 
@@ -36,10 +38,10 @@ public class WomenServiceImpl implements WomenService {
 
 	private List<String> findEmailIdOfLocalDuragas(String lat, String lng) {
 
-		Double minLat = Double.parseDouble(lat) - 10;
-		Double maxLat = Double.parseDouble(lat) + 10;
-		Double minLng = Double.parseDouble(lng) - 10;
-		Double maxLng = Double.parseDouble(lng) + 10;
+		Double minLat = Double.parseDouble(lat) - 0.1;
+		Double maxLat = Double.parseDouble(lat) + 0.1;
+		Double minLng = Double.parseDouble(lng) - 0.1;
+		Double maxLng = Double.parseDouble(lng) + 0.1;
 		if (minLat <= 0)
 			minLat = 0.0;
 		if (maxLat <= 0)
